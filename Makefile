@@ -1,5 +1,5 @@
 CC=gcc
-DEBUG=-Wall -Wpedantic
+DEBUG=-Wall -Wpedantic -g
 CFLAGS=-O2
 
 all:
