@@ -87,15 +87,11 @@ void rdns_range(uint32_t start, uint32_t end)
 
 		uint32_to_ipv4(ipaddr, sizeof(ipaddr), ipnum);
 
-		/*If a hostname is found for the given ip, "-> hostname" will be printed afterwards*/
-		printf(ipaddr);
-
 		hostlen = sizeof(host);
-		if (ipv4_to_hostname(ipaddr, host, &hostlen)) {
-			printf(" -> %s\n", host);
-		} else
-			putchar('\n');
-
+		if (ipv4_to_hostname(ipaddr, host, &hostlen))
+			printf("%s -> %s\n", ipaddr, host);
+		else
+			printf("%s\n", ipaddr);
 		fflush(stdout);
 
 		if (ipnum != end)
