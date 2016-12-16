@@ -180,48 +180,51 @@ bool ipv4_to_uint32(char* ip, size_t n, uint32_t* result)
 	return true;
 }
 
-
+void usage(void)
+{
+	fprintf(stderr, "-h prints this text\n");
+	fprintf(stderr, "./rdns starting_ip [ending_ip]\n");
+	exit(1);
+}
 
 int main(int argc, char *argv[])
 {
 	int opt;
 	uint32_t start, end;
-	bool start_set, end_set;
 
 	end       = 0;
 	start     = 0;
-	end_set   = false;
-	start_set = false;
-	while ((opt = getopt(argc, argv, "s:e:")) != -1) {
+	while ((opt = getopt(argc, argv, "h")) != -1) {
 		switch (opt) {
-		case 's':
-			start_set = true;
-			if (!ipv4_to_uint32(optarg, strlen(optarg), &start)) {
-				fprintf(stderr, "Invalid starting ip!\n");
-				exit(1);
-			}
-			break;
-		case 'e':
-			end_set = true;
-			if (!ipv4_to_uint32(optarg, strlen(optarg), &end)) {
-				fprintf(stderr, "Invalid ending ip!\n");
-				exit(1);
-			}
-			break;
+		case 'h':
 		default:
-			fprintf(stderr, "Usage: ./rdns -s starting_ip -e ending_ip\n");
-			exit(1);
+			usage();
 		}
 	}
-	if (!start_set || !end_set) {
-		fprintf(stderr, "Both \"-s\" and \"-e\" must be set!\n");
-		exit(1);
-	}
+
+	if (optind < argc) {
+		if (!ipv4_to_uint32(argv[optind], strlen(argv[optind]), &start)) {
+			fprintf(stderr, "Invalid starting ip!\n");
+			exit(1);
+		}
+	} else
+		usage();
+	optind++;
+
+	/*in case there isn't another ip, set it to look up the only one specified*/
+	end = start;
+	if (optind < argc)
+		if (!ipv4_to_uint32(argv[optind], strlen(argv[optind]), &end)) {
+			fprintf(stderr, "Invalid ending ip!\n");
+			exit(1);
+		}
+
+	/*sanity check*/
 	if (start > end) {
 		fprintf(stderr, "Start must be less than or equal to end\n");
+		usage();
 		exit(1);
 	}
-
 	rdns_range(start, end);
 	return 0;
 }
