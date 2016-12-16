@@ -31,6 +31,7 @@ static uint32_t strn_to_uint32(char *num, size_t *n)
 	return ret;
 }
 
+
 bool ipv4_to_uint32(char* ip, size_t n, uint32_t* result)
 {
 	size_t i;
