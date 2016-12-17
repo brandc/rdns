@@ -1,6 +1,13 @@
 /*The octet lengths of different supported IP versions*/
-static const size_t IPV4LEN =  4;
-static const size_t IPV6LEN = 16;
+#define IPV4LEN  4
+#define IPV6LEN 16
+
+/*minimum and maximum lengths for ipv4 and ipv6 ips in string form*/
+#define IPV4MINSTRLEN  7 /*strlen("0.0.0.0")                                       =  7*/
+#define IPV4MAXSTRLEN 15 /*strlen("255.255.255.255")                               = 15*/
+
+#define IPV6MINSTRLEN  2 /*strlen("::")                                            =  2*/
+#define IPV6MAXSTRLEN 45 /*strlen("FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:255.255.255.255") = 45*/
 
 typedef struct {
 	/*AF_INET or AF_INET6*/
@@ -11,20 +18,21 @@ typedef struct {
 		uint8_t ipv6[IPV6LEN];	/*The size of an ipv6 address is 128bits*/
 	} ip_data;
 
-	/*INET6_ADDRSTRLEN = longest possible ip with a space for a null terminator*/
+	/*INET6_ADDRSTRLEN = longest possible ip with room for one null terminator*/
 	char ipstr[INET6_ADDRSTRLEN];
 }ip_t;
 
-static void uint32_to_ipv4(char *dest, size_t n, uint32_t ip)
+static size_t ip_to_ipv4(ip_t* ip)
 {
 	/*IPV4 integer to string*/
-	snprintf(dest,
-		 n,
-		 "%u.%u.%u.%u",
-		 (ip >> 24) & 0xFF,
-		 (ip >> 16) & 0xFF,
-		 (ip >>  8) & 0xFF,
-		 (ip >>  0) & 0xFF
+	return snprintf(ip->ipstr,
+			/*longest possible ipv4 string with room for one null terminator*/
+			INET_ADDRSTRLEN,
+			"%u.%u.%u.%u",
+			ip->ip_data.ipv4[0],
+			ip->ip_data.ipv4[1],
+			ip->ip_data.ipv4[2],
+			ip->ip_data.ipv4[3]
 	);
 }
 
@@ -51,17 +59,16 @@ static bool ipv4_to_buf(ip_t* ip_ctx)
 {
 	size_t i;
 	size_t len;
-	size_t octets;
+	size_t octet;
 	uint32_t raw_value;
 
+	/*Sanity check of string size*/
 	len = strnlen(ip_ctx->ipstr, sizeof(ip_ctx->ipstr));
-	/*shortest ipv4 address: 0.0.0.0 which is 7 bytes in length*/
-	/*longest ipv4 address: 255.255.255.255 which is 15 bytes in length*/
-	if (len <= 7 || len >= 15)
+	if (len < IPV4MINSTRLEN || len > IPV4MAXSTRLEN)
 		return false;
 
 	/*octets is set to IPV4LEN, the length of ipv4 address and must be enforced*/
-	for (i = 0, octets = IPV4LEN; octets && (i < sizeof(ip_ctx->ipstr)); i++, octets--) {
+	for (i = 0, octet = (IPV4LEN-1); (octet >= 0) && (i < sizeof(ip_ctx->ipstr)); i++, octet--) {
 		/*Since 256 is the longest possible number for an ipv4 address*/
 		len = 3;
 		raw_value = strn_to_uint32(ip_ctx->ipstr+i, &len);
@@ -76,23 +83,19 @@ static bool ipv4_to_buf(ip_t* ip_ctx)
 		i   += len;
 
 		/*enforce the ipv4 dots*/
-		if (((i+1) < len) && (ip[i+1] != '.'))
+		if (((i+1) < len) && (ip_ctx->ipstr[i+1] != '.'))
 			return false;
 
 		if (ip_ctx->family == AF_INET)
-			ip_ctx->ip_data.ipv4[octets] = raw_value;
+			ip_ctx->ip_data.ipv4[octet] = raw_value & 0xFF;
 		/**************************************************************
 		 * This is to support the alternative form of ipv6 addresses. *
 		 *	specified in: rfc4291, section 2.2                    *
 		 * 	example: ::AAAA:127.0.0.1                             *
 		 **************************************************************/
 		else if (ip_ctx->family == AF_INET6)
-			ip_ctx->ip_data.ipv6[octets + 12] = raw_value;
+			ip_ctx->ip_data.ipv6[octet + 12] = raw_value & 0xFF;
 	}
-
-	/*octet length check*/
-	if (octets != -1)
-		return false;
 
 	return true;
 }
@@ -102,10 +105,7 @@ static bool ipv6_to_buf(ip_t* ip_ctx)
 	
 }
 
-
-
-
-static int fast_detect_family(ip_t* ip_ctx)
+static int guess_family(ip_t* ip_ctx)
 {
 	char c;
 	size_t i;
@@ -130,20 +130,16 @@ bool ip_init(ip_t *ip_ctx, const char *ip, size_t iplen)
 	memset(ip_ctx, 0, sizeof(ip_t));
 	memcpy(&ip_ctx->ipstr, ip, iplen);
 
-	ip_ctx->family = fast_detect_family(ip_ctx);
+	ip_ctx->family = guess_family(ip_ctx);
 	if (ip_ctx->family == -1)
 		return false;
 
 	if (ip_ctx->family == AF_INET) {
-		if (!ipv4_to_buf(ip_ctx)) {
-			fprintf(stderr, "\tInvalid ipv4 address\n");
+		if (!ipv4_to_buf(ip_ctx))
 			return false;
-		}
 	} else if (ip_ctx->family == AF_INET6) {
-		if (!ipv6_to_buf(ip_ctx)) {
-			fprintf(stderr, "\tInvalid ipv6 address\n");
+		if (!ipv6_to_buf(ip_ctx))
 			return false;
-		}
 	} else
 		return false;
 
