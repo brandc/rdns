@@ -9,8 +9,8 @@
 #include <netdb.h>
 #include <sys/socket.h>
 
-/*ipv4 string stuff*/
-#include "utils.c"
+/*ip string stuff*/
+#include "ip.c"
 
 /*The resulting hostname will be returned in host and the length in hostlen*/
 bool ipv4_to_hostname(const char* ip, char* host, size_t *hostlen)
@@ -112,10 +112,8 @@ void usage(void)
 int main(int argc, char *argv[])
 {
 	int opt;
-	uint32_t start, end;
+	ip_t start, end;
 
-	end       = 0;
-	start     = 0;
 	while ((opt = getopt(argc, argv, "h")) != -1) {
 		switch (opt) {
 		case 'h':
@@ -125,7 +123,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (optind < argc) {
-		if (!ipv4_to_uint32(argv[optind], strlen(argv[optind]), &start)) {
+		if (!ip_init(&start, argv[optind], strlen(argv[optind]))) {
 			fprintf(stderr, "Invalid starting ip!\n");
 			exit(1);
 		}
@@ -136,7 +134,7 @@ int main(int argc, char *argv[])
 	/*in case there isn't another ip, set it to look up the only one specified*/
 	end = start;
 	if (optind < argc)
-		if (!ipv4_to_uint32(argv[optind], strlen(argv[optind]), &end)) {
+		if (!ip_init(&end, argv[optind], strlen(argv[optind]))) {
 			fprintf(stderr, "Invalid ending ip!\n");
 			exit(1);
 		}
