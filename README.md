@@ -2,10 +2,12 @@
 ![Zero Clause BSD License](https://img.shields.io/badge/License-BSD%20Zero%20Clause-green)
 
 # RDNS
-Reverse DNS Program. Takes IPv4 addresses and converts them into their respective domain names
+Reverse DNS Program. Takes IPv4 addresses and converts them into their respective domain names.
 
 # Usage
-./rdns
+./rdns 8.8.8.8
+
+Takes an IPv4 address as a parameter and returns the respective domain name.
 
 # Building
 ## Requirements:
