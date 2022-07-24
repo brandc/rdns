@@ -1,6 +1,24 @@
-# rdns
-Only ipv4 supported at this time.
-Simple and small reverse dns program.
+![Programming Language](https://img.shields.io/badge/C-Programming%20Language-brightgreen)
+![Zero Clause BSD License](https://img.shields.io/badge/License-BSD%20Zero%20Clause-green)
 
-Usage:
-    ./rdns starting_ip [ending_ip]
+# RDNS
+Reverse DNS Program. Takes IPv4 addresses and converts them into their respective domain names
+
+# Usage
+./rdns
+
+# Building
+## Requirements:
+- GNU C Compiler
+
+## Dependencies
+- Standard POSIX environment
+
+## Process
+Build process
+```
+make all
+```
+
+# License
+All code and files in this repository are licensed under the 0-BSD License
